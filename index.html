@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RANI'S BAR-MITZVAH 🥳</title>
+<meta name="description" content="יום ד׳ · 16.12.26 · 19:00–22:00 · הצפירה 10, תל אביב">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#2a211d">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="he_IL">
+<meta property="og:title" content="RANI'S BAR-MITZVAH 🥳">
+<meta property="og:description" content="יום ד׳ · 16.12.26 · 19:00–22:00 · הצפירה 10, תל אביב">
+<meta property="og:image" content="https://rani-party.onrender.com/assets/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://rani-party.onrender.com/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p class="noscript">כדי לאשר הגעה צריך להפעיל JavaScript בדפדפן.</p></noscript>
+<div class="wall" aria-hidden="true"></div>
+
+<main class="stage">
+  <div class="card" id="card">
+
+    <section class="paper logo-paper enter e1">
+      <span class="tape" aria-hidden="true"></span>
+      <img class="logo" src="assets/logo-stacked.svg" alt="RANI'S BAR-MITZVAH" width="350" height="198">
+    </section>
+
+    <section class="paper info-paper enter e2">
+      <div class="info-body">
+        <div class="datetime">
+          <div class="dt-item">
+            <svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar"/></svg>
+            <div class="dt-text">יום ד׳ · <bdi dir="ltr">16.12.26</bdi></div>
+          </div>
+          <div class="dt-item dt-time">
+            <svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-clock"/></svg>
+            <bdi class="dt-text" dir="ltr">19:00–22:00</bdi>
+          </div>
+        </div>
+        <div class="dash" aria-hidden="true"></div>
+        <div class="place">
+          <svg class="ic ic-26 red" aria-hidden="true"><use href="assets/icons/sprite.svg#i-map-pin"/></svg>
+          <div class="place-text">הצפירה 10, תל אביב</div>
+        </div>
+        <div class="about">בתכנית: <b>ארוחת ערב, מלא נישנושים, ריקודים ומשחקים</b></div>
+      </div>
+    </section>
+
+    <div class="actions enter e3">
+      <button type="button" class="act" data-open="nav">
+        <svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-navigation"/></svg>ניווט לאירוע
+      </button>
+      <button type="button" class="act" data-open="cal">
+        <svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar-plus"/></svg>הוספה ליומן
+      </button>
+      <button type="button" class="act act-gift" data-open="gift">
+        <span class="emoji" aria-hidden="true">🎁</span>מתנה בפייבוקס
+      </button>
+    </div>
+
+    <div class="rsvp-block enter e4">
+      <div class="banner">אנא אשרו הגעה</div>
+      <form class="rsvp-row" id="quick" novalidate>
+        <input class="inp name-inp" id="quickName" type="text" maxlength="60" autocomplete="name" enterkeyhint="done" placeholder="השם שלכם" aria-label="השם שלכם">
+        <button class="btn-primary quick-btn" type="submit">אישור הגעה ✏️</button>
+      </form>
+      <div class="name-err" id="nameErr" role="alert" hidden>נא לכתוב שם כדי לאשר הגעה</div>
+    </div>
+
+    <p class="closing enter e5">מחכים לראותכם 🥳</p>
+  </div>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
+  <div class="handle" aria-hidden="true"></div>
+
+  <!-- 02/03 אישור הגעה -->
+  <section data-view="rsvp" hidden>
+    <header class="sh-head">
+      <h2>אישור הגעה</h2>
+      <button type="button" class="icon-btn" data-close aria-label="סגירה"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-close"/></svg></button>
+    </header>
+    <form id="rsvpForm" class="rsvp-form" novalidate>
+      <div class="f-name">
+        <label class="lbl" for="fName">שם</label>
+        <input class="inp" id="fName" type="text" maxlength="60" autocomplete="name" enterkeyhint="done">
+      </div>
+      <div class="choice" role="radiogroup" aria-label="האם מגיעים">
+        <button type="button" role="radio" aria-checked="true" data-v="yes" class="ch ch-yes"><span>🎉 מגיעים</span><svg class="ic ic-20 ch-check" aria-hidden="true"><use href="assets/icons/sprite.svg#i-check"/></svg></button>
+        <button type="button" role="radio" aria-checked="false" data-v="no" class="ch ch-no"><span>😢 לא נוכל</span></button>
+      </div>
+      <div class="collapse f-count" id="countWrap">
+        <div class="collapse-in">
+          <div class="count-head"><span class="count-label">כמות האנשים המגיעים</span><small>עד 5</small></div>
+          <div class="stepper" role="group" aria-label="כמות האנשים המגיעים">
+            <button type="button" class="step-btn" id="plus" aria-label="הוספת אדם"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-plus"/></svg></button>
+            <output class="step-val" id="countVal" aria-live="polite">1</output>
+            <button type="button" class="step-btn" id="minus" aria-label="הפחתת אדם"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-minus"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="collapse f-note" id="noteWrap">
+        <div class="collapse-in">
+          <label class="lbl" for="fNote">הערה (לא חובה)</label>
+          <textarea class="inp ta" id="fNote" maxlength="300" placeholder="אלרגיות, בקשות, ברכה לרני…"></textarea>
+        </div>
+      </div>
+      <button type="button" class="note-link" id="noteLink" hidden>+ הוספת הערה</button>
+      <input class="hp" id="hp" name="hp_x7" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="form-err" id="rsvpErr" role="alert" hidden></p>
+      <button type="submit" class="btn-primary send" id="sendBtn">שליחה</button>
+    </form>
+  </section>
+
+  <!-- 04 תודה -->
+  <section data-view="thanks" hidden class="center-view">
+    <div class="sticker"><svg class="ic" aria-hidden="true"><use href="assets/icons/sprite.svg#i-check"/></svg></div>
+    <h2 class="big" id="thanksTitle">תודה!</h2>
+    <p class="thanks-line" id="thanksLine"></p>
+    <button type="button" class="link-btn" id="editRsvp">לשינוי או להוספת מוזמנים</button>
+    <button type="button" class="btn-secondary" data-close>סגירה</button>
+  </section>
+
+  <!-- 05/N1 ניווט -->
+  <section data-view="nav" hidden>
+    <header class="sh-head">
+      <h2>איך מגיעים?</h2>
+      <button type="button" class="icon-btn" data-close aria-label="סגירה"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-close"/></svg></button>
+    </header>
+    <div class="paper-piece addr-piece">
+      <span class="circle red-circle"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-map-pin"/></svg></span>
+      <div class="addr-text"><b>הצפירה 10</b><span>תל אביב</span></div>
+      <button type="button" class="copy-btn" id="copyAddr"><svg class="ic ic-20" aria-hidden="true"><use href="assets/icons/sprite.svg#i-copy"/></svg><span>העתקה</span></button>
+    </div>
+    <div class="lbl-muted">פתיחה באפליקציה</div>
+    <div class="rows">
+      <a class="row-link" data-app="Waze" data-color="#33ccff" href="https://waze.com/ul?q=%D7%94%D7%A6%D7%A4%D7%99%D7%A8%D7%94%2010%20%D7%AA%D7%9C%20%D7%90%D7%91%D7%99%D7%91&navigate=yes"><span class="tile" data-c="waze"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-navigation"/></svg></span><span class="row-name">Waze</span><span class="chev" aria-hidden="true">‹</span></a>
+      <a class="row-link" data-app="Google Maps" data-color="#34a853" href="https://www.google.com/maps/dir/?api=1&destination=%D7%94%D7%A6%D7%A4%D7%99%D7%A8%D7%94+10+%D7%AA%D7%9C+%D7%90%D7%91%D7%99%D7%91"><span class="tile" data-c="google"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-navigation"/></svg></span><span class="row-name">Google Maps</span><span class="chev" aria-hidden="true">‹</span></a>
+      <a class="row-link" data-app="Apple Maps" data-color="#e8e8ed" href="https://maps.apple.com/?daddr=%D7%94%D7%A6%D7%A4%D7%99%D7%A8%D7%94+10,+%D7%AA%D7%9C+%D7%90%D7%91%D7%99%D7%91"><span class="tile" data-c="apple"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-navigation"/></svg></span><span class="row-name">Apple Maps</span><span class="chev" aria-hidden="true">‹</span></a>
+    </div>
+  </section>
+
+  <!-- 06/C1 יומן -->
+  <section data-view="cal" hidden>
+    <header class="sh-head">
+      <h2>שומרים את התאריך</h2>
+      <button type="button" class="icon-btn" data-close aria-label="סגירה"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-close"/></svg></button>
+    </header>
+    <div class="paper-piece cal-piece">
+      <div class="mini-cal"><div class="mc-head">דצמ׳</div><div class="mc-day">16</div></div>
+      <div class="cal-text"><b>בר המצווה של רני</b><span>יום ד׳ · <bdi dir="ltr">19:00–22:00</bdi></span><span>הצפירה 10, תל אביב</span></div>
+    </div>
+    <div class="rows rows-cal" id="calRows">
+      <a class="row-link" data-id="google" data-app="Google Calendar" data-color="#4285f4" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=%D7%91%D7%A8%20%D7%94%D7%9E%D7%A6%D7%95%D7%95%D7%94%20%D7%A9%D7%9C%20%D7%A8%D7%A0%D7%99&dates=20261216T170000Z/20261216T200000Z&location=%D7%94%D7%A6%D7%A4%D7%99%D7%A8%D7%94%2010%2C%20%D7%AA%D7%9C%20%D7%90%D7%91%D7%99%D7%91"><span class="tile" data-c="gcal"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar"/></svg></span><span class="row-name">Google Calendar</span><span class="chev" aria-hidden="true">‹</span></a>
+      <a class="row-link" data-id="apple" data-ics href="rani-bar-mitzvah.ics"><span class="tile" data-c="apple"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar"/></svg></span><span class="row-name">Apple Calendar</span><span class="chev" aria-hidden="true">‹</span></a>
+      <a class="row-link" data-id="outlook" data-app="Outlook" data-color="#0f78d4" href="https://outlook.live.com/calendar/0/deeplink/compose?subject=%D7%91%D7%A8%20%D7%94%D7%9E%D7%A6%D7%95%D7%95%D7%94%20%D7%A9%D7%9C%20%D7%A8%D7%A0%D7%99&startdt=2026-12-16T19:00:00%2B02:00&enddt=2026-12-16T22:00:00%2B02:00&location=%D7%94%D7%A6%D7%A4%D7%99%D7%A8%D7%94%2010%2C%20%D7%AA%D7%9C%20%D7%90%D7%91%D7%99%D7%91"><span class="tile" data-c="outlook"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar"/></svg></span><span class="row-name">Outlook</span><span class="chev" aria-hidden="true">‹</span></a>
+      <a class="row-link" data-id="ics" data-ics href="rani-bar-mitzvah.ics"><span class="tile" data-c="ics"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-download"/></svg></span><span class="row-name">הורדת קובץ ICS</span><span class="chev" aria-hidden="true">‹</span></a>
+    </div>
+  </section>
+
+  <!-- C2 קובץ יומן מוכן -->
+  <section data-view="ics" hidden class="center-view">
+    <div class="sticker"><svg class="ic" aria-hidden="true"><use href="assets/icons/sprite.svg#i-calendar-plus"/></svg></div>
+    <h2 class="big">הקובץ מוכן!</h2>
+    <p class="thanks-line">פתחו את rani-bar-mitzvah.ics ובחרו <b>"הוספה ליומן"</b>.</p>
+    <a class="btn-primary btn-block" id="icsOpen" href="rani-bar-mitzvah.ics"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-download"/></svg>פתיחת הקובץ</a>
+    <button type="button" class="btn-secondary" data-close>חזרה להזמנה</button>
+    <p class="foot-note">לא נפתח בווטסאפ? פתחו את הקישור ב-Safari / Chrome דרך ⋯</p>
+  </section>
+
+  <!-- G1 מתנה -->
+  <section data-view="gift" hidden>
+    <header class="sh-head">
+      <h2>🎁 מתנה לרני</h2>
+      <button type="button" class="icon-btn" data-close aria-label="סגירה"><svg class="ic ic-22" aria-hidden="true"><use href="assets/icons/sprite.svg#i-close"/></svg></button>
+    </header>
+    <div class="paper-piece gift-piece">
+      <span class="circle blue-circle"><svg class="ic ic-28" aria-hidden="true"><use href="assets/icons/sprite.svg#i-gift"/></svg></span>
+      <p>מי שרוצה לפרגן — אפשר להצטרף ל<b>קבוצת המתנה של רני</b> בפייבוקס.</p>
+    </div>
+    <a class="btn-primary btn-blue btn-block" id="giftOpen" data-app="PayBox" data-color="#1fa0c4" href="#">פתיחה בפייבוקס ‹</a>
+    <button type="button" class="btn-secondary btn-block" id="copyGift"><svg class="ic ic-20" aria-hidden="true"><use href="assets/icons/sprite.svg#i-copy"/></svg><span>העתקת הקישור</span></button>
+    <p class="foot-note">נפתח באפליקציית PayBox. אין אפליקציה? הקישור ייפתח בדפדפן.</p>
+  </section>
+
+  <!-- X פותחים אפליקציה -->
+  <section data-view="leave" hidden class="center-view">
+    <span class="circle big-circle" id="leaveCircle"><svg class="ic ic-34" aria-hidden="true"><use href="assets/icons/sprite.svg#i-navigation"/></svg></span>
+    <h2 class="big" id="leaveTitle">פותחים…</h2>
+    <div class="bar" aria-hidden="true"><i></i></div>
+    <a class="link-btn" id="leaveRetry" href="#">לא נפתח? לחצו כאן</a>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
