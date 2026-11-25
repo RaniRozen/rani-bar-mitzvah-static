@@ -1,0 +1,94 @@
+:root{--ink:#141414;--paper:#f3e6c9;--paper-light:#fbf3e1;--yellow:#ffc42e;--blue:#1fa0c4;--red:#d42b1f;--red-pressed:#a81f15;--paper-pressed:#ece1c9;--error:#b3261e;--err-bg:#ffd9d4;--err-tx:#8a1d14;--ok-bg:#c9f0d3;--ok-tx:#14532a;--muted:#5b5048}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:#2a1c16}
+body{margin:0;min-height:100svh;font-family:'Rubik',system-ui,sans-serif;font-size:16px;line-height:1.45;color:var(--ink)}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer}
+bdi{unicode-bidi:isolate}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wall{position:fixed;inset:0;z-index:-1;background:linear-gradient(rgba(25,14,10,.45),rgba(25,14,10,.45)),url(../assets/bg-brick.svg) 0 0/120px 52px}
+.ic{width:20px;height:20px;flex:none}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+.err{margin:0;color:var(--error);font-weight:700;font-size:14px}
+/* כפתורים */
+.btn-ink,.btn-red,.btn-light,.btn-out,.btn-danger{min-height:44px;border:3px solid var(--ink);border-radius:10px;padding:0 16px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:3px 3px 0 var(--ink);white-space:nowrap}
+.btn-ink{background:var(--ink);color:var(--yellow);height:52px;width:100%;font-size:19px}
+.btn-red{background:var(--red);color:#fff}.btn-red:active{background:var(--red-pressed)}
+.btn-light{background:var(--paper-light)}.btn-light:active{background:var(--paper-pressed)}
+.btn-out{background:transparent;color:#fff;border-color:#fff;box-shadow:none}
+.btn-danger{background:#fff;color:var(--error);border-color:var(--error)}
+.btn-ink:active,.btn-red:active,.btn-light:active,.btn-danger:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+button[disabled]{opacity:.45;box-shadow:none;pointer-events:none}
+/* כניסה */
+.login{min-height:100svh;display:grid;place-items:center;padding:20px}
+.login-card{width:min(360px,100%);background:var(--paper-light);border:3px solid var(--ink);border-radius:16px;box-shadow:5px 5px 0 var(--ink);padding:26px 22px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.login-card h1{margin:0;font-weight:900;font-size:24px}
+.pw{width:100%;display:flex;align-items:center;gap:8px;height:52px;background:#fff;border:3px solid var(--ink);border-radius:10px;padding:0 12px}
+.pw input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:16px}
+.pw:focus-within{outline:3px solid var(--yellow);outline-offset:3px}
+.pw.bad{border-color:var(--red)}
+/* לוח */
+.top{min-height:84px;padding:12px 22px;display:flex;align-items:center;gap:14px;background:url(../assets/bg-brick.svg) 0 0/120px 52px;border-bottom:3px solid var(--ink)}
+.top h1{margin:0;color:#fff;font-weight:900;font-size:24px;text-shadow:2px 2px 0 var(--ink);flex:1}
+.top h1 span{font-weight:700}
+.top-act{display:flex;gap:10px}
+.wrap{max-width:1180px;margin:0 auto;padding:22px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.tile{border:3px solid var(--ink);border-radius:14px;box-shadow:4px 4px 0 var(--ink);padding:14px 18px;display:flex;flex-direction:column}
+.tile b{font-size:52px;line-height:1.1;font-weight:900}.tile span{font-weight:700}
+.t-yellow{background:var(--yellow)}.t-light{background:var(--paper-light)}.t-blue{background:var(--blue)}.t-white{background:#fff;color:var(--red)}
+.tools{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:22px 0 16px}
+.search{display:flex;align-items:center;gap:8px;width:360px;max-width:100%;height:48px;background:#fff;border:3px solid var(--ink);border-radius:10px;padding:0 12px}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent}
+.search:focus-within{outline:3px solid var(--yellow);outline-offset:3px}
+.seg{display:flex;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--paper-light)}
+.seg button{min-height:42px;border:0;background:transparent;padding:0 14px;font-weight:700}
+.seg button+button{border-inline-start:3px solid var(--ink)}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--yellow)}
+.seg i{font-style:normal;opacity:.8;margin-inline-start:4px}
+.tools .btn-red{margin-inline-start:auto}
+.tbl-wrap{background:var(--paper-light);border:3px solid var(--ink);border-radius:14px;box-shadow:5px 5px 0 var(--ink);overflow:hidden}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{background:var(--ink);color:var(--paper);font-weight:700;font-size:14px;height:48px;text-align:start;padding:0 14px}
+.tbl td{height:56px;padding:6px 14px;border-bottom:2px solid var(--paper-pressed);vertical-align:middle}
+.tbl td.nm{font-weight:800}
+.tbl td.nt{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.tbl td.dt{color:var(--muted);font-size:14px;white-space:nowrap}
+.tag{display:inline-block;border:2px solid var(--ink);border-radius:999px;padding:1px 12px;font-weight:700;font-size:14px;white-space:nowrap}
+.tag.y{background:var(--ok-bg);color:var(--ok-tx)}.tag.n{background:var(--err-bg);color:var(--err-tx)}
+.acts{display:flex;gap:8px}
+.ib{width:44px;height:44px;display:grid;place-items:center;background:#fff;border:2px solid var(--ink);border-radius:10px}
+.ib.del{color:var(--error);border-color:var(--error)}
+.empty{margin:0;padding:28px;text-align:center;font-weight:700;color:var(--muted)}
+/* מודאל */
+.m-scrim{position:fixed;inset:0;z-index:50;background:rgba(243,230,201,.72);display:grid;place-items:center;padding:16px;overflow:auto}
+.m-scrim[hidden]{display:none}
+.modal{width:min(440px,100%);background:var(--paper-light);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal h2{margin:0;font-weight:900;font-size:22px}
+.fl{display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px}
+.inp{width:100%;background:#fff;border:3px solid var(--ink);border-radius:10px;padding:10px 12px;font-size:16px;font-weight:400;resize:none}
+.inp:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
+.inp.bad{border-color:var(--red)}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ch{min-height:48px;background:#fff;border:3px solid var(--ink);border-radius:10px;font-weight:700;font-size:17px;box-shadow:3px 3px 0 var(--ink)}
+.ch[aria-checked=true]{background:var(--yellow);font-weight:800}
+.step{display:flex;align-items:center;gap:16px}
+.step button{width:48px;height:48px;display:grid;place-items:center;background:#fff;border:3px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink)}
+.step b{font-size:26px;font-weight:900;min-width:30px;text-align:center}
+.m-act{display:flex;flex-wrap:wrap;gap:10px}
+.m-act .btn-red{flex:1}
+.toast{position:fixed;z-index:90;left:50%;transform:translateX(-50%);bottom:24px;max-width:92vw;background:var(--err-bg);color:var(--err-tx);border:3px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--ink);padding:10px 16px;font-weight:700}
+.toast.ok{background:var(--ok-bg);color:var(--ok-tx)}
+.toast[hidden]{display:none}
+/* מובייל */
+@media (max-width:760px){
+  .top{padding:10px 14px;flex-wrap:wrap}.top h1{font-size:18px;flex-basis:60%}.top h1 span{display:block;font-size:14px}
+  .top-act{width:100%}.top-act button{flex:1}
+  .wrap{padding:14px}.tiles{grid-template-columns:1fr 1fr;gap:12px}.tile b{font-size:40px}
+  .tools .btn-red{margin-inline-start:0;width:100%}.seg{width:100%}.seg button{flex:1;padding:0 6px}
+  .tbl,.tbl tbody,.tbl tr,.tbl td{display:block}.tbl thead{display:none}
+  .tbl tr{padding:12px 14px;border-bottom:2px solid var(--paper-pressed);display:grid;grid-template-columns:1fr auto;gap:4px 10px}
+  .tbl td{height:auto;border:0;padding:0}.tbl td.nm{grid-column:1}.tbl td.st{grid-column:2;grid-row:1}
+  .tbl td.ct{grid-column:1}.tbl td.nt{grid-column:1/-1;max-width:none;white-space:normal}.tbl td.dt{grid-column:1}.tbl td.ac{grid-column:2;grid-row:2/4;align-self:end}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}

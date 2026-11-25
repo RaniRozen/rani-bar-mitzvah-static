@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ניהול אורחים · הבר מצווה של רני</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#2a211d">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/favicon-32.png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&display=swap">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<noscript><p style="padding:12px;background:#f3e6c9;text-align:center">נדרש JavaScript.</p></noscript>
+<div class="wall" aria-hidden="true"></div>
+
+<!-- כניסה -->
+<main id="login" class="login">
+  <form id="loginForm" class="login-card" autocomplete="off" novalidate>
+    <img src="../assets/mark.svg" alt="" width="64" height="64">
+    <h1>ניהול אורחים</h1>
+    <label class="pw">
+      <svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-lock"/></svg>
+      <input id="pw" type="password" placeholder="סיסמה" autocomplete="current-password" aria-label="סיסמה" required>
+    </label>
+    <p id="loginErr" class="err" role="alert" hidden>סיסמה שגויה, נסו שוב</p>
+    <button id="loginBtn" class="btn-ink" type="submit">כניסה</button>
+  </form>
+</main>
+
+<!-- לוח בקרה -->
+<div id="dash" hidden>
+  <header class="top">
+    <img src="../assets/mark.svg" alt="" width="48" height="48">
+    <h1>ניהול אורחים <span>· בר המצווה של רני</span></h1>
+    <div class="top-act">
+      <button id="exportBtn" class="btn-light" type="button"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-download"/></svg><span>ייצוא לאקסל</span></button>
+      <button id="logoutBtn" class="btn-out" type="button"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-log-out"/></svg><span>יציאה</span></button>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="tiles" aria-label="סיכום">
+      <div class="tile t-yellow"><b id="sTotal">0</b><span>סה״כ אנשים</span></div>
+      <div class="tile t-light"><b id="sYes">0</b><span>אישורים</span></div>
+      <div class="tile t-blue"><b id="sPlus">0</b><span>מלווים</span></div>
+      <div class="tile t-white"><b id="sNo">0</b><span>לא מגיעים</span></div>
+    </section>
+    <section class="tools">
+      <label class="search">
+        <svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-search"/></svg>
+        <input id="q" type="search" placeholder="חיפוש לפי שם" aria-label="חיפוש לפי שם">
+      </label>
+      <div class="seg" role="group" aria-label="סינון">
+        <button type="button" data-f="all" aria-pressed="true">הכול <i id="cAll">0</i></button>
+        <button type="button" data-f="yes" aria-pressed="false">מגיעים <i id="cYes">0</i></button>
+        <button type="button" data-f="no" aria-pressed="false">לא מגיעים <i id="cNo">0</i></button>
+      </div>
+      <button id="addBtn" class="btn-red" type="button"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-plus"/></svg><span>הוספת אורח</span></button>
+    </section>
+    <section class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th>שם</th><th>סטטוס</th><th>כמות</th><th>הערה</th><th>עודכן</th><th><span class="sr">פעולות</span></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p id="empty" class="empty" hidden>אין אורחים להצגה</p>
+    </section>
+  </main>
+</div>
+
+<!-- מודאל עריכה/הוספה -->
+<div id="mScrim" class="m-scrim" hidden>
+  <form id="mForm" class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" novalidate>
+    <h2 id="mTitle">עריכת אורח</h2>
+    <label class="fl">שם<input id="mName" class="inp" maxlength="60" autocomplete="off"></label>
+    <div class="choice" role="radiogroup" aria-label="סטטוס">
+      <button type="button" class="ch" data-v="yes" role="radio" aria-checked="true">מגיע/ה</button>
+      <button type="button" class="ch" data-v="no" role="radio" aria-checked="false">לא מגיע/ה</button>
+    </div>
+    <div id="mCountWrap" class="fl">כמות אנשים
+      <div class="step">
+        <button type="button" id="mMinus" aria-label="פחות"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-minus"/></svg></button>
+        <b id="mCount">1</b>
+        <button type="button" id="mPlus" aria-label="יותר"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-plus"/></svg></button>
+      </div>
+    </div>
+    <label class="fl">הערה<textarea id="mNote" class="inp" rows="2" maxlength="200"></textarea></label>
+    <p id="mErr" class="err" role="alert" hidden></p>
+    <div class="m-act">
+      <button id="mSave" class="btn-red" type="submit">שמירה</button>
+      <button id="mDel" class="btn-danger" type="button"><svg class="ic" aria-hidden="true"><use href="../assets/icons/sprite.svg#i-trash"/></svg><span>מחיקה</span></button>
+      <button id="mCancel" class="btn-light" type="button">ביטול</button>
+    </div>
+  </form>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<script src="../js/config.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
