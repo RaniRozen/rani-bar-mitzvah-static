@@ -245,6 +245,28 @@
     }
   }
   refreshMain();
+  // סנכרון מול השרת: אם הניהול מחק את האישור – חוזרים למצב ההתחלתי; אם עדכן – מציגים את הנתונים העדכניים
+  let syncing = false;
+  async function syncStatus() {
+    const saved = store.get();
+    if (!saved?.id || syncing || !C.SHEETS_API_URL || st.status === 'sending') return;
+    syncing = true;
+    try {
+      const r = await once('rsvp.status', { id: saved.id, dev: deviceId }, 15000);
+      if (st.status === 'sending') return;
+      if (!r.exists) {
+        try { localStorage.removeItem(C.STORAGE_KEY); } catch { /* */ }
+        refreshMain();
+        if (current === 'thanks') closeSheet();
+      } else if (r.name !== saved.name || r.attending !== saved.attending || r.count !== saved.count || r.note !== saved.note) {
+        store.set({ id: r.id, name: r.name, attending: r.attending, count: r.count || 1, note: r.note });
+        refreshMain();
+      }
+    } catch { /* אין רשת – משאירים את המצב המקומי */ } finally { syncing = false; }
+  }
+  syncStatus();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncStatus(); });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) syncStatus(); });
   // לחיצה על שדה השם פותחת את גיליון האישור עם המקלדת – הדף הראשי נשאר יציב
   qName.addEventListener('focus', () => { if (!sheet.hidden) return; qName.blur(); openRsvp(true); });
   qName.addEventListener('click', (e) => { e.preventDefault(); if (sheet.hidden) { qName.blur(); openRsvp(true); } });
