@@ -8,9 +8,11 @@
   --kb:0px;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
-html{background:#3b2820; -webkit-text-size-adjust:100%; min-height:100%}
+html{background:#3b2820; -webkit-text-size-adjust:100%; min-height:100%; overflow-x:hidden; overscroll-behavior:none; touch-action:manipulation}
 body{margin:0; min-height:100svh; font-family:'Rubik',system-ui,sans-serif; font-size:16px; line-height:1.45; color:var(--ink); overflow-x:hidden}
-body.locked{overflow:hidden}
+body.locked{overflow:hidden; position:fixed; inset:0; width:100%}
+body{overscroll-behavior:none; max-width:100vw}
+.name-inp[readonly]{cursor:text}
 button,input,textarea{font:inherit; color:inherit}
 button{cursor:pointer}
 a{color:inherit}
@@ -71,7 +73,7 @@ bdi{unicode-bidi:isolate}
 .btn-primary[disabled],.btn-secondary[disabled]{opacity:.45; box-shadow:none; pointer-events:none}
 .name-err{margin-top:-4px; background:#fff; align-self:flex-start; padding:2px 8px; border-radius:6px; color:var(--error); font-weight:700; font-size:14px}
 .name-err[hidden],.form-err[hidden]{display:none}
-.closing{margin:auto 0 0; font-weight:900; font-size:max(14px, calc(26 * var(--u))); color:#fff; text-shadow:3px 3px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink)}
+.closing{margin:auto 0 0; text-align:center; font-weight:900; font-size:max(14px, calc(26 * var(--u))); color:#fff; text-shadow:3px 3px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink)}
 :focus-visible{outline:3px solid var(--yellow); outline-offset:3px}
 
 /* ---- כניסה לדף ---- */
@@ -84,7 +86,7 @@ bdi{unicode-bidi:isolate}
 .scrim{position:fixed; inset:0; z-index:70; background:rgba(10,6,4,.28); opacity:0; transition:opacity .2s ease}
 .scrim[hidden],.sheet[hidden],.toast[hidden]{display:none}
 .scrim.show{opacity:1}
-.sheet{position:fixed; z-index:80; left:0; right:0; bottom:var(--kb); max-width:520px; margin:0 auto; max-height:92svh; overflow-y:auto; overscroll-behavior:contain; background:var(--paper-light); border-top:3px solid var(--ink); border-radius:22px 22px 0 0; padding:10px 18px calc(30px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:16px; transform:translateY(100%); transition:transform .2s ease-in}
+.sheet{overflow-x:hidden; touch-action:pan-y; position:fixed; z-index:80; left:0; right:0; bottom:var(--kb); max-width:520px; margin:0 auto; max-height:92svh; overflow-y:auto; overscroll-behavior:contain; background:var(--paper-light); border-top:3px solid var(--ink); border-radius:22px 22px 0 0; padding:10px 18px calc(30px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:16px; transform:translateY(100%); transition:transform .2s ease-in}
 .sheet.show{transform:none; transition:transform .28s cubic-bezier(.2,.9,.3,1.1)}
 .sheet > section{display:flex; flex-direction:column; gap:16px}
 .sheet > section[hidden]{display:none}
@@ -214,3 +216,9 @@ bdi{unicode-bidi:isolate}
   .sheet,.sheet.show{transition:opacity .12s linear !important; transform:none}
   .sheet:not(.show){opacity:0}
 }
+.rsvp-row.done .quick-btn{flex:1; width:100%}
+/* מצב מקלדת + הערה: דחיסה כדי שהכול ייכנס מעל המקלדת בלי גלילה */
+.sheet.compact.note-open .sh-head h2{display:none}
+.sheet.compact.note-open .f-note .lbl{display:none}
+.sheet.compact.note-open .f-note .inp.ta{height:56px; padding:8px 14px}
+.sheet.compact.note-open{gap:10px}
