@@ -222,3 +222,4 @@ bdi{unicode-bidi:isolate}
 .sheet.compact.note-open .f-note .lbl{display:none}
 .sheet.compact.note-open .f-note .inp.ta{height:56px; padding:8px 14px}
 .sheet.compact.note-open{gap:10px}
+.toast{width:max-content}
