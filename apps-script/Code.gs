@@ -20,6 +20,7 @@ function doPost(e) {
     switch (req.action) {
       case 'rsvp.create': return out_(rsvpCreate_(req));
       case 'rsvp.update': return out_(rsvpUpdate_(req));
+      case 'rsvp.status': return out_(rsvpStatus_(req));
       case 'admin.login': return out_(login_(req));
       case 'admin.logout': CacheService.getScriptCache().remove('t_' + String(req.token || '')); return out_({ ok: true });
       case 'admin.list': requireAuth_(req); return out_({ ok: true, guests: readAll_() });
@@ -129,6 +130,17 @@ function rsvpUpdate_(req) {
   if (String(sh.getRange(row, 8).getValue()) !== device) fail_('forbidden', 'אי אפשר לעדכן אישור ממכשיר אחר');
   writeRow_(row, String(req.id), d, device);
   return { ok: true, id: String(req.id) };
+}
+
+// האם האישור של המכשיר עדיין קיים (למשל נמחק ע"י הניהול)? מחזיר את הנתונים העדכניים אם כן.
+function rsvpStatus_(req) {
+  rateLimit_('status', 600, 600);
+  var device = devHash_(req);
+  var row = findRow_(8, device);
+  if (row < 0) return { ok: true, exists: false };
+  var r = sheet_().getRange(row, 1, 1, HEADERS.length).getValues()[0];
+  if (String(req.id || '') && String(r[0]) !== String(req.id)) return { ok: true, exists: false };
+  return { ok: true, exists: true, id: String(r[0]), name: String(r[1]), attending: String(r[2]) === 'yes', count: Number(r[3]) || 0, note: String(r[4]) };
 }
 
 function login_(req) {
