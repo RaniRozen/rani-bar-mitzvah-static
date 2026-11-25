@@ -106,7 +106,8 @@
     setTimeout(() => { btn.classList.remove('ok'); span.textContent = old; }, 2000);
   }
   $('#copyAddr').addEventListener('click', async (e) => {
-    if (await copyText('הצפירה 10, תל אביב')) { flashOk(e.currentTarget, 'הועתק!'); toast('הכתובת הועתקה', true); } else toast('לא הצלחנו להעתיק');
+    const btn = e.currentTarget;
+    if (await copyText('הצפירה 10, תל אביב')) { toast('הכתובת הועתקה', true); flashOk(btn, 'הועתק!'); } else toast('לא הצלחנו להעתיק');
   });
 
   // ---------- מתנה ----------
@@ -115,7 +116,8 @@
     gift.href = C.PAYBOX_URL;
     gift.addEventListener('click', (e) => { e.preventDefault(); leaveTo(C.PAYBOX_URL, 'PayBox', '#1fa0c4'); });
     $('#copyGift').addEventListener('click', async (e) => {
-      if (await copyText(C.PAYBOX_URL)) { flashOk(e.currentTarget, 'הקישור הועתק!'); toast('הקישור לפייבוקס הועתק', true); } else toast('לא הצלחנו להעתיק');
+      const btn = e.currentTarget;
+      if (await copyText(C.PAYBOX_URL)) { toast('הקישור לפייבוקס הועתק', true); flashOk(btn, 'הקישור הועתק!'); } else toast('לא הצלחנו להעתיק');
     });
   } else {
     $('.act-gift').hidden = true; $('.actions').style.gridTemplateColumns = 'repeat(2, minmax(0,1fr))';
