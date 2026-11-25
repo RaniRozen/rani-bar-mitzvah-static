@@ -61,16 +61,33 @@
 
   // ---------- מקלדת: גיליון מעל המקלדת (visualViewport) ----------
   const vv = window.visualViewport;
+  // גובה "בסיס" של המסך בלי מקלדת – כדי לזהות שהמקלדת פתוחה בלי להסתמך על innerHeight (שמתנהג שונה בכל דפדפן)
+  let baseH = vv ? vv.height : innerHeight;
+  const fieldFocused = () => isFieldEl(document.activeElement) && sheet.contains(document.activeElement);
   function layoutSheet() {
     const vh = vv ? vv.height : innerHeight;
-    const kb = vv ? Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)) : 0;
-    document.documentElement.style.setProperty('--kb', kb + 'px');
+    const top0 = vv ? vv.offsetTop : 0;
+    if (!fieldFocused() && vh >= baseH * 0.8) baseH = vh;
+    const kbOpen = !!vv && fieldFocused() && baseH - vh > 100;
     const compact = current === 'rsvp' && vh < 520;
     sheet.classList.toggle('compact', compact);
-    if (!compact) sheet.classList.remove('note-open');
+    if (!compact && document.activeElement !== f.note) sheet.classList.remove('note-open');
+    if (kbOpen) {
+      // מצמידים את הגיליון לתחתית האזור הנראה (מעל המקלדת) – גם כשהדף "נגרר" למעלה
+      sheet.style.maxHeight = vh + 'px'; sheet.style.height = 'auto';
+      const h = Math.min(sheet.scrollHeight, vh);
+      sheet.style.top = Math.round(top0 + vh - h) + 'px'; sheet.style.bottom = 'auto'; sheet.style.height = h + 'px';
+    } else {
+      sheet.style.top = ''; sheet.style.bottom = ''; sheet.style.height = ''; sheet.style.maxHeight = '';
+    }
   }
+  addEventListener('orientationchange', () => { setTimeout(() => { baseH = vv ? vv.height : innerHeight; layoutSheet(); }, 300); });
   if (vv) { vv.addEventListener('resize', layoutSheet); vv.addEventListener('scroll', layoutSheet); }
+  addEventListener('scroll', () => { if (fieldFocused()) layoutSheet(); }, { passive: true });
+  document.addEventListener('focusin', () => { layoutSheet(); setTimeout(layoutSheet, 120); setTimeout(layoutSheet, 400); });
   document.addEventListener('focusout', () => setTimeout(layoutSheet, 60));
+  // גרירה על הרקע/הגיליון לא מזיזה את הדף
+  scrim.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
   // ---------- אפליקציה חיצונית ----------
   function leaveTo(url, appName, color) {
@@ -157,14 +174,17 @@
   }));
   f.plus.addEventListener('click', () => { st.count = Math.min(C.MAX_GUESTS, st.count + 1); renderRsvp(); });
   f.minus.addEventListener('click', () => { st.count = Math.max(1, st.count - 1); renderRsvp(); });
+  // לחיצה על שדה ההערה לא מסתירה אותו כשהמקלדת נפתחת (מצב קומפקטי)
+  f.note.addEventListener('focus', () => sheet.classList.add('note-open'));
   $('#noteLink').addEventListener('click', () => { sheet.classList.add('note-open'); f.note.focus(); });
   f.form.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); i.blur(); } }));
 
   function openRsvp(focusName) {
     const saved = store.get();
+    // ברירת מחדל לאישור חדש: מגיעים, אורח אחד, בלי הערה
     st.id = saved?.id || null;
     st.attending = saved ? saved.attending !== false : true;
-    st.count = saved?.count || 1;
+    st.count = saved ? Math.min(C.MAX_GUESTS, Math.max(1, saved.count || 1)) : 1;
     f.name.value = saved?.name || '';
     f.note.value = saved?.note || '';
     f.err.hidden = true; f.send.disabled = false; f.send.textContent = 'שליחה'; f.send.removeAttribute('aria-busy');
@@ -172,6 +192,8 @@
     renderRsvp();
     openSheet('rsvp');
     if (focusName) f.name.focus();   // באותה לחיצה – כדי שהמקלדת תיפתח גם ב-iOS
+    // אם יש אישור שמור שלא אומת לאחרונה – בודקים מול השרת שלא נמחק (ואם נמחק, חוזרים לברירות המחדל)
+    if (saved && !saved.pending && Date.now() - (saved.verified || 0) > 15000) syncStatus();
   }
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -195,28 +217,51 @@
     throw last;
   }
 
-  f.form.addEventListener('submit', async (e) => {
+  // שליחה "אופטימית": מסך התודה מופיע מיד, והשליחה לשרת רצה ברקע עם ניסיונות חוזרים.
+  // אם נכשלה – האישור נשמר במכשיר כ"ממתין" ונשלח שוב אוטומטית (טעינה/חזרה לדף/חזרת רשת).
+  const sendStatus = $('#sendStatus');
+  let flushing = false; let retryTimer = 0;
+  function setSendStatus(txt) { sendStatus.textContent = txt || ''; sendStatus.hidden = !txt; }
+  async function flushPending() {
+    const s = store.get();
+    if (!s?.pending || flushing || !C.SHEETS_API_URL) return;
+    flushing = true; clearTimeout(retryTimer);
+    setSendStatus('שולחים את האישור…');
+    try {
+      const r = await api(s.exists ? 'rsvp.update' : 'rsvp.create', { id: s.id, name: s.name, attending: s.attending, count: s.attending ? s.count : 0, note: s.note, hp: '', dev: deviceId });
+      const cur = store.get();
+      // אם בינתיים נשלח עדכון חדש יותר – משאירים אותו כ"ממתין"
+      if (cur && cur.rev === s.rev) store.set({ id: r.id || s.id, name: s.name, attending: s.attending, count: s.count, note: s.note, exists: true, verified: Date.now() });
+      setSendStatus(cur && cur.rev !== s.rev ? 'שולחים את האישור…' : 'האישור נקלט ✓');
+      refreshMain();
+      if (store.get()?.pending) { flushing = false; return flushPending(); }
+      setTimeout(() => { if (!store.get()?.pending) setSendStatus(''); }, 2500);
+    } catch (ex) {
+      if (ex.server && ex.code !== 'rate') {
+        // השרת דחה (למשל נתון לא תקין) – אין טעם לנסות שוב
+        store.set({ ...s, pending: false }); setSendStatus(''); toast(ex.message);
+      } else {
+        setSendStatus('אין חיבור כרגע – ננסה לשלוח שוב אוטומטית');
+        retryTimer = setTimeout(flushPending, 6000);
+      }
+    } finally { flushing = false; refreshMain(); }
+  }
+  addEventListener('online', flushPending);
+
+  f.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (st.status === 'sending') return;
     const name = f.name.value.trim();
     if (name.length < 2) { f.err.textContent = 'נא לכתוב שם כדי לאשר הגעה'; f.err.hidden = false; f.name.classList.add('bad'); f.name.focus(); return; }
+    if ($('#hp').value) return;                                   // honeypot
     f.name.classList.remove('bad'); f.err.hidden = true;
-    st.status = 'sending'; f.send.disabled = true; f.send.textContent = '⟳ רגע…'; f.send.setAttribute('aria-busy', 'true');
-    const slowT = setTimeout(() => { if (st.status === 'sending') f.send.textContent = '⟳ עדיין שולחים…'; }, 5000);
-    const payload = { name, attending: st.attending, count: st.attending ? st.count : 0, note: f.note.value.trim(), hp: $('#hp').value, dev: deviceId };
-    try {
-      if (!st.id) st.id = hex(20);                // id נוצר אצל הלקוח → ניסיון חוזר לא יוצר כפילות
-      const r = await api(store.get()?.id ? 'rsvp.update' : 'rsvp.create', { id: st.id, ...payload }, () => { f.send.textContent = '⟳ מנסים שוב…'; });
-      st.id = r.id || st.id;
-      store.set({ id: st.id, name, attending: st.attending, count: payload.count || 1, note: payload.note });
-      refreshMain();
-      showThanks(name, st.attending, payload.count);
-    } catch (ex) {
-      toast(ex.server ? ex.message : 'לא הצלחנו להתחבר. בדקו אינטרנט ונסו שוב – הפרטים נשמרו בטופס');
-    } finally {
-      clearTimeout(slowT);
-      st.status = 'idle'; f.send.disabled = false; f.send.textContent = 'שליחה'; f.send.removeAttribute('aria-busy');
-    }
+    const prev = store.get();
+    const id = prev?.id || st.id || hex(20);                      // id נוצר אצל הלקוח → ניסיון חוזר לא יוצר כפילות
+    const count = st.attending ? st.count : 0;
+    store.set({ id, name, attending: st.attending, count: count || 1, note: f.note.value.trim(), pending: true, exists: !!prev?.exists, rev: Date.now() });
+    st.id = id;
+    refreshMain();
+    showThanks(name, st.attending, count);
+    flushPending();
   });
 
   function showThanks(name, attending, count) {
@@ -241,7 +286,7 @@
       // כבר אישרו מהמכשיר הזה → אין שליחה חוזרת, רק עריכה
       qName.hidden = true; quick.classList.add('done');
       qBtn.textContent = 'עריכת האישור ✏️';
-      banner.textContent = saved.attending === false ? 'עדכנתם שלא תגיעו' : 'תודה! אישרתם הגעה ✓';
+      banner.textContent = saved.pending ? 'שולחים את האישור…' : (saved.attending === false ? 'עדכנתם שלא תגיעו' : 'תודה! אישרתם הגעה ✓');
     } else {
       qName.hidden = false; quick.classList.remove('done'); qBtn.textContent = 'אישור הגעה ✏️'; banner.textContent = bannerText;
     }
@@ -251,24 +296,30 @@
   let syncing = false;
   async function syncStatus() {
     const saved = store.get();
-    if (!saved?.id || syncing || !C.SHEETS_API_URL || st.status === 'sending') return;
+    if (!saved?.id || saved.pending || flushing || syncing || !C.SHEETS_API_URL) return;
     syncing = true;
     try {
       const r = await once('rsvp.status', { id: saved.id, dev: deviceId }, 15000);
-      if (st.status === 'sending') return;
+      const now = store.get();
+      if (!now || now.pending || now.id !== saved.id) return;     // בינתיים השתנה משהו מקומית
       if (!r.exists) {
         try { localStorage.removeItem(C.STORAGE_KEY); } catch { /* */ }
+        st.id = null;
+        if (current === 'rsvp') {                                 // הטופס פתוח עם נתונים ישנים → ברירות מחדל
+          st.attending = true; st.count = 1; if (f.name.value === saved.name) f.name.value = ''; f.note.value = ''; renderRsvp();
+        }
         refreshMain();
         if (current === 'thanks') closeSheet();
-      } else if (r.name !== saved.name || r.attending !== saved.attending || r.count !== saved.count || r.note !== saved.note) {
-        store.set({ id: r.id, name: r.name, attending: r.attending, count: r.count || 1, note: r.note });
-        refreshMain();
+      } else {
+        const same = r.name === now.name && r.attending === now.attending && r.count === now.count && r.note === now.note;
+        store.set({ id: r.id, name: r.name, attending: r.attending, count: r.count || 1, note: r.note, exists: true, verified: Date.now() });
+        if (!same) refreshMain();
       }
     } catch { /* אין רשת – משאירים את המצב המקומי */ } finally { syncing = false; }
   }
-  syncStatus();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncStatus(); });
-  window.addEventListener('pageshow', (e) => { if (e.persisted) syncStatus(); });
+  if (store.get()?.pending) flushPending(); else syncStatus();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { if (store.get()?.pending) flushPending(); else syncStatus(); } });
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { if (store.get()?.pending) flushPending(); else syncStatus(); } });
   // לחיצה על שדה השם פותחת את גיליון האישור עם המקלדת – הדף הראשי נשאר יציב
   qName.addEventListener('focus', () => { if (!sheet.hidden) return; qName.blur(); openRsvp(true); });
   qName.addEventListener('click', (e) => { e.preventDefault(); if (sheet.hidden) { qName.blur(); openRsvp(true); } });
