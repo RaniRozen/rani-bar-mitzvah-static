@@ -92,3 +92,4 @@ button[disabled]{opacity:.45;box-shadow:none;pointer-events:none}
   .tbl td.ct{grid-column:1}.tbl td.nt{grid-column:1/-1;max-width:none;white-space:normal}.tbl td.dt{grid-column:1}.tbl td.ac{grid-column:2;grid-row:2/4;align-self:end}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+body.saving .top h1::after{content:" ⟳ שומר…";font-size:14px;font-weight:700;color:var(--yellow)}

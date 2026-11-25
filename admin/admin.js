@@ -4,7 +4,8 @@
   const $ = (s) => document.querySelector(s);
   const TOK = 'raniAdminTok';
   let token = sessionStorage.getItem(TOK) || '';
-  let guests = [], filter = 'all', query = '', editing = null, ma = true, mc = 1, delArmed = false, busy = false;
+  let guests = [], filter = 'all', query = '', editing = null, ma = true, mc = 1, delArmed = false, busy = false, pending = 0;
+  const syncBadge = () => document.body.classList.toggle('saving', pending > 0);
 
   function toast(msg, ok) { const t = $('#toast'); t.textContent = msg; t.className = 'toast' + (ok ? ' ok' : ''); t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 3000); }
 
@@ -40,9 +41,9 @@
   $('#logoutBtn').addEventListener('click', async () => { try { await api('admin.logout'); } catch { /* */ } showLogin(); });
 
   // ---- נתונים ----
-  async function load() {
+  async function load(silent) {
     try { const r = await api('admin.list'); guests = r.guests || []; render(); }
-    catch (ex) { if (ex.code === 'auth') { showLogin(); toast('ההתחברות פגה, היכנסו שוב'); } else toast(ex.message); }
+    catch (ex) { if (ex.code === 'auth') { showLogin(); toast('ההתחברות פגה, היכנסו שוב'); } else if (!silent) toast(ex.message); }
   }
   const fmt = (iso) => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
   function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
@@ -110,21 +111,32 @@
     e.preventDefault(); if (busy) return;
     const name = $('#mName').value.trim(); const err = $('#mErr');
     if (name.length < 2) { err.textContent = 'נא לכתוב שם'; err.hidden = false; $('#mName').classList.add('bad'); $('#mName').focus(); return; }
-    busy = true; const b = $('#mSave'); b.disabled = true; b.textContent = '⟳ רגע…';
+    // עדכון מיידי במסך (optimistic) – השרת מתעדכן ברקע; אם נכשל, חוזרים למצב הקודם
+    const d = { name, attending: ma, count: ma ? mc : 0, note: $('#mNote').value.trim() };
+    const before = guests.slice(); const target = editing;
+    const stamp = new Date().toISOString();
+    if (target) guests = guests.map((g) => (g.id === target.id ? { ...g, ...d, updated: stamp } : g));
+    else guests = [{ id: 'tmp' + Date.now(), ...d, created: stamp, updated: stamp }, ...guests];
+    render(); closeModal();
+    pending++; syncBadge();
     try {
-      const d = { name, attending: ma, count: ma ? mc : 0, note: $('#mNote').value.trim() };
-      if (editing) await api('admin.update', { id: editing.id, ...d }); else await api('admin.add', d);
-      closeModal(); toast('נשמר', true); await load();
-    } catch (ex) { if (ex.code === 'auth') { closeModal(); showLogin(); } else { err.textContent = ex.message; err.hidden = false; } }
-    finally { busy = false; b.disabled = false; b.textContent = 'שמירה'; }
+      if (target) await api('admin.update', { id: target.id, ...d }); else await api('admin.add', d);
+      toast('נשמר', true);
+    } catch (ex) {
+      guests = before; render();
+      if (ex.code === 'auth') { showLogin(); } else toast('השמירה נכשלה: ' + ex.message);
+    } finally { pending--; syncBadge(); if (!pending) load(true); }
   });
   $('#mDel').addEventListener('click', async () => {
-    if (!editing || busy) return;
+    if (!editing) return;
     if (!delArmed) { delArmed = true; $('#mDel span').textContent = 'לחצו שוב למחיקה סופית'; return; }
-    busy = true;
-    try { await api('admin.delete', { id: editing.id }); closeModal(); toast('נמחק', true); await load(); }
-    catch (ex) { $('#mErr').textContent = ex.message; $('#mErr').hidden = false; resetDel(); }
-    finally { busy = false; }
+    const target = editing; const before = guests.slice();
+    guests = guests.filter((g) => g.id !== target.id);
+    render(); closeModal();
+    pending++; syncBadge();
+    try { if (!String(target.id).startsWith('tmp')) await api('admin.delete', { id: target.id }); toast('נמחק', true); }
+    catch (ex) { guests = before; render(); if (ex.code === 'auth') showLogin(); else toast('המחיקה נכשלה: ' + ex.message); }
+    finally { pending--; syncBadge(); if (!pending) load(true); }
   });
 
   // ---- ייצוא CSV ----
