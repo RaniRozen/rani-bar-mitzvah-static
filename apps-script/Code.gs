@@ -6,7 +6,7 @@
 var SHEET_NAME = 'RSVP';
 var HEADERS = ['id', 'name', 'attending', 'count', 'note', 'created', 'updated', 'device'];
 var MAX_GUESTS = 5;
-var TOKEN_TTL = 6 * 3600;
+var TOKEN_TTL = 3600; // שעה
 
 function doGet() { return out_({ ok: true, service: 'rani-rsvp' }); }
 
