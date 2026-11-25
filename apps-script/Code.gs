@@ -4,7 +4,7 @@
  * Deploy: Deploy → New deployment → Web app → Execute as: Me, Who has access: Anyone.
  */
 var SHEET_NAME = 'RSVP';
-var HEADERS = ['id', 'name', 'attending', 'count', 'note', 'created', 'updated'];
+var HEADERS = ['id', 'name', 'attending', 'count', 'note', 'created', 'updated', 'device'];
 var MAX_GUESTS = 5;
 var TOKEN_TTL = 6 * 3600;
 
@@ -46,6 +46,9 @@ function sheet_() {
     sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
     sh.setFrozenRows(1);
     sh.getRange(2, 1, 1000, HEADERS.length).setNumberFormat('@'); // טקסט בלבד – מונע הזרקת נוסחאות
+  } else if (String(sh.getRange(1, 8).getValue()) !== 'device') {
+    sh.getRange(1, 8).setValue('device').setFontWeight('bold');
+    sh.getRange(2, 8, 1000, 1).setNumberFormat('@');
   }
   return sh;
 }
@@ -63,8 +66,15 @@ function validate_(req) {
   if (attending && (!(count >= 1) || count > MAX_GUESTS)) fail_('bad_input', 'כמות לא תקינה');
   return { name: name, attending: attending, count: count, note: clean_(req.note, 200) };
 }
-function toRow_(id, d, created, updated) {
-  return [id, d.name, d.attending ? 'yes' : 'no', String(d.count), d.note, created, updated];
+function devHash_(req) {
+  var d = String(req.dev || '');
+  if (!/^[0-9a-f]{32}$/.test(d)) fail_('bad_input', 'שגיאה');
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'rani-bm26:' + d), s = '';
+  for (var i = 0; i < bytes.length; i++) s += ((bytes[i] & 255) + 256).toString(16).substring(1);
+  return s;
+}
+function toRow_(id, d, created, updated, device) {
+  return [id, d.name, d.attending ? 'yes' : 'no', String(d.count), d.note, created, updated, device || ''];
 }
 function readAll_() {
   var sh = sheet_(); var n = sh.getLastRow(); if (n < 2) return [];
@@ -76,10 +86,10 @@ function readAll_() {
   res.sort(function (a, b) { return a.updated < b.updated ? 1 : -1; });
   return res;
 }
-function findRow_(id) {
-  var sh = sheet_(); var n = sh.getLastRow(); if (n < 2) return -1;
-  var ids = sh.getRange(2, 1, n - 1, 1).getValues();
-  for (var i = 0; i < ids.length; i++) if (String(ids[i][0]) === String(id)) return i + 2;
+function findRow_(col, value) {
+  var sh = sheet_(); var n = sh.getLastRow(); if (n < 2 || !value) return -1;
+  var vals = sh.getRange(2, col, n - 1, 1).getValues();
+  for (var i = 0; i < vals.length; i++) if (String(vals[i][0]) === String(value)) return i + 2;
   return -1;
 }
 function newId_() { return Utilities.getUuid().replace(/-/g, '').substring(0, 20); }
@@ -93,19 +103,31 @@ function rateLimit_(key, max, windowSec) {
 
 function checkHp_(req) { if (req.hp) fail_('bad_input', 'שגיאה'); }
 
+function writeRow_(row, id, d, device) {
+  var sh = sheet_(); var created = String(sh.getRange(row, 6).getValue());
+  sh.getRange(row, 1, 1, HEADERS.length).setNumberFormat('@').setValues([toRow_(id, d, created, now_(), device)]);
+}
+
+// אישור אחד למכשיר: אם המכשיר כבר אישר – מעדכנים את אותה שורה. id מהלקוח → ניסיון חוזר לא יוצר כפילות.
 function rsvpCreate_(req) {
-  checkHp_(req); rateLimit_('create', 60, 600);
-  var d = validate_(req);
-  var id = newId_(), t = now_();
-  sheet_().appendRow(toRow_(id, d, t, t));
+  checkHp_(req); rateLimit_('create', 150, 600);
+  var d = validate_(req); var device = devHash_(req);
+  var row = findRow_(8, device);
+  if (row > 0) { var sh = sheet_(); var id0 = String(sh.getRange(row, 1).getValue()); writeRow_(row, id0, d, device); return { ok: true, id: id0 }; }
+  var id = /^[0-9a-f]{20}$/.test(String(req.id || '')) ? String(req.id) : newId_();
+  if (findRow_(1, id) > 0) id = newId_();
+  var t = now_();
+  sheet_().appendRow(toRow_(id, d, t, t, device));
   return { ok: true, id: id };
 }
 function rsvpUpdate_(req) {
-  checkHp_(req); rateLimit_('update', 60, 600);
-  var d = validate_(req); var row = findRow_(req.id);
+  checkHp_(req); rateLimit_('update', 150, 600);
+  var d = validate_(req); var device = devHash_(req);
+  var row = findRow_(1, req.id);
   if (row < 0) return rsvpCreate_(req);
-  var sh = sheet_(); var created = String(sh.getRange(row, 6).getValue());
-  sh.getRange(row, 1, 1, HEADERS.length).setNumberFormat('@').setValues([toRow_(String(req.id), d, created, now_())]);
+  var sh = sheet_();
+  if (String(sh.getRange(row, 8).getValue()) !== device) fail_('forbidden', 'אי אפשר לעדכן אישור ממכשיר אחר');
+  writeRow_(row, String(req.id), d, device);
   return { ok: true, id: String(req.id) };
 }
 
@@ -129,11 +151,11 @@ function requireAuth_(req) {
   var t = String(req.token || '');
   if (t.length < 40 || !CacheService.getScriptCache().get('t_' + t)) fail_('auth', 'נדרשת התחברות');
 }
-function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); sheet_().appendRow(toRow_(id, d, t, t)); return { ok: true, id: id }; }
+function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); sheet_().appendRow(toRow_(id, d, t, t, '')); return { ok: true, id: id }; }
 function adminUpdate_(req) {
-  var d = validate_(req); var row = findRow_(req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא');
-  var sh = sheet_(); var created = String(sh.getRange(row, 6).getValue());
-  sh.getRange(row, 1, 1, HEADERS.length).setNumberFormat('@').setValues([toRow_(String(req.id), d, created, now_())]);
+  var d = validate_(req); var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא');
+  var sh = sheet_(); var device = String(sh.getRange(row, 8).getValue());
+  writeRow_(row, String(req.id), d, device);
   return { ok: true };
 }
-function adminDelete_(req) { var row = findRow_(req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא'); sheet_().deleteRow(row); return { ok: true }; }
+function adminDelete_(req) { var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא'); sheet_().deleteRow(row); return { ok: true }; }
