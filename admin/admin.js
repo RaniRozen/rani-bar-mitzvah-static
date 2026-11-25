@@ -3,7 +3,10 @@
   const C = window.RANI;
   const $ = (s) => document.querySelector(s);
   const TOK = 'raniAdminTok';
-  let token = sessionStorage.getItem(TOK) || '';
+  // הכניסה נשמרת במכשיר למשך שעה מרגע הכניסה (גם אחרי יציאה וחזרה)
+  const SESSION_MS = 60 * 60 * 1000;
+  const loadSession = () => { try { const s = JSON.parse(localStorage.getItem(TOK)); if (s && s.token && s.exp > Date.now()) return s.token; localStorage.removeItem(TOK); } catch { /* */ } return ''; };
+  let token = loadSession();
   let guests = [], filter = 'all', query = '', editing = null, ma = true, mc = 1, delArmed = false, busy = false, pending = 0;
   const syncBadge = () => document.body.classList.toggle('saving', pending > 0);
 
@@ -22,7 +25,7 @@
   }
 
   // ---- כניסה ----
-  function showLogin() { $('#dash').hidden = true; $('#login').hidden = false; token = ''; sessionStorage.removeItem(TOK); setTimeout(() => $('#pw').focus(), 50); }
+  function showLogin() { $('#dash').hidden = true; $('#login').hidden = false; token = ''; try { localStorage.removeItem(TOK); } catch { /* */ } setTimeout(() => $('#pw').focus(), 50); }
   async function showDash() { $('#login').hidden = true; $('#dash').hidden = false; await load(); }
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault(); if (busy) return;
@@ -31,7 +34,7 @@
     busy = true; const b = $('#loginBtn'); b.disabled = true; b.textContent = '⟳ רגע…'; b.setAttribute('aria-busy', 'true');
     try {
       const r = await api('admin.login', { password: pw });
-      token = r.token; sessionStorage.setItem(TOK, token); $('#pw').value = '';
+      token = r.token; try { localStorage.setItem(TOK, JSON.stringify({ token, exp: Date.now() + SESSION_MS })); } catch { /* */ } $('#pw').value = '';
       await showDash();
     } catch (ex) {
       err.textContent = ex.code === 'locked' ? 'יותר מדי ניסיונות, נסו שוב בעוד כמה דקות' : (ex.code === 'bad_password' || !ex.code ? (/חיבור|API/.test(ex.message) ? ex.message : 'סיסמה שגויה, נסו שוב') : ex.message);
