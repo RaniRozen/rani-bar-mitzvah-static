@@ -45,7 +45,7 @@
 
   // ---- נתונים ----
   async function load(silent) {
-    try { const r = await api('admin.list'); guests = r.guests || []; render(); }
+    try { const r = await api('admin.list'); if (pending > 0) return; guests = r.guests || []; render(); }
     catch (ex) { if (ex.code === 'auth') { showLogin(); toast('ההתחברות פגה, היכנסו שוב'); } else if (!silent) toast(ex.message); }
   }
   const fmt = (iso) => { if (!iso) return ''; const d = new Date(iso); if (isNaN(d)) return ''; return d.toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
@@ -117,6 +117,7 @@
     // עדכון מיידי במסך (optimistic) – השרת מתעדכן ברקע; אם נכשל, חוזרים למצב הקודם
     const d = { name, attending: ma, count: ma ? mc : 0, note: $('#mNote').value.trim() };
     const before = guests.slice(); const target = editing;
+    if (target && String(target.id).startsWith('tmp')) { err.textContent = 'האורח עדיין נשמר, נסו שוב בעוד רגע'; err.hidden = false; return; }
     const stamp = new Date().toISOString();
     if (target) guests = guests.map((g) => (g.id === target.id ? { ...g, ...d, updated: stamp } : g));
     else guests = [{ id: 'tmp' + Date.now(), ...d, created: stamp, updated: stamp }, ...guests];
@@ -150,6 +151,10 @@
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'rani-guests.csv';
     document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   });
+
+  // רענון אוטומטי: חזרה לדף / כל דקה – כדי לראות אישורים חדשים בלי לרענן ידנית
+  const autoRefresh = () => { if (token && !$('#dash').hidden && scrim.hidden && !pending && document.visibilityState === 'visible') load(true); };
+  document.addEventListener('visibilitychange', autoRefresh); setInterval(autoRefresh, 60000);
 
   if (token) showDash().catch(showLogin); else showLogin();
 })();
