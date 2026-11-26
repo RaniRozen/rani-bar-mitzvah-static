@@ -34,6 +34,7 @@
   // ---------- גיליון תחתון ----------
   let current = null;
   let leaveTimer = 0;
+  let closeTimer = 0;
   function showView(name) {
     $$('[data-view]', sheet).forEach((v) => { v.hidden = v.dataset.view !== name; });
     current = name;
@@ -41,11 +42,11 @@
     layoutSheet();
   }
   function openSheet(name) {
-    if (scrim.hidden) {
-      scrim.hidden = false; sheet.hidden = false;
-      document.body.classList.add('locked');
-      requestAnimationFrame(() => requestAnimationFrame(() => { scrim.classList.add('show'); sheet.classList.add('show'); }));
-    }
+    // גם אם הגיליון באמצע סגירה (לחיצה מהירה שוב) – מבטלים את הסגירה ופותחים מחדש
+    clearTimeout(closeTimer);
+    scrim.hidden = false; sheet.hidden = false;
+    document.body.classList.add('locked');
+    if (!sheet.classList.contains('show')) requestAnimationFrame(() => requestAnimationFrame(() => { scrim.classList.add('show'); sheet.classList.add('show'); }));
     showView(name);
   }
   function closeSheet() {
@@ -53,7 +54,8 @@
     const a = document.activeElement; if (isFieldEl(a)) a.blur();
     scrim.classList.remove('show'); sheet.classList.remove('show');
     document.body.classList.remove('locked');
-    setTimeout(() => { if (!sheet.classList.contains('show')) { scrim.hidden = true; sheet.hidden = true; current = null; sheet.classList.remove('compact', 'note-open', 'declined'); } }, reduced ? 130 : 220);
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => { if (!sheet.classList.contains('show')) { scrim.hidden = true; sheet.hidden = true; current = null; sheet.classList.remove('compact', 'note-open', 'declined'); } }, reduced ? 130 : 220);
   }
   scrim.addEventListener('click', closeSheet);
   sheet.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeSheet(); });
@@ -206,13 +208,15 @@
       return j;
     } finally { clearTimeout(t); }
   }
+  // שגיאה "סופית" = השרת דחה במפורש (נתון לא תקין וכו'). שגיאת שרת כללית / עומס / חוסר רשת – ננסה שוב.
+  const permanent = (e) => !!(e && e.server && e.code && e.code !== 'rate' && e.code !== 'busy');
   // שליחה עם ניסיונות חוזרים (הפעולה אידמפוטנטית – אותו id/מכשיר לא יוצר כפילות)
   async function api(action, data, onRetry) {
     if (!C.SHEETS_API_URL) throw new Error('not-configured');
     let last;
     for (let i = 0; i < 3; i++) {
       if (i) { onRetry?.(); await sleep(700 * i); }
-      try { return await once(action, data, i ? 25000 : 18000); } catch (e) { if (e.server) throw e; last = e; }
+      try { return await once(action, data, i ? 25000 : 18000); } catch (e) { if (permanent(e)) throw e; last = e; }
     }
     throw last;
   }
@@ -237,7 +241,7 @@
       if (store.get()?.pending) { flushing = false; return flushPending(); }
       setTimeout(() => { if (!store.get()?.pending) setSendStatus(''); }, 2500);
     } catch (ex) {
-      if (ex.server && ex.code !== 'rate') {
+      if (permanent(ex)) {
         // השרת דחה (למשל נתון לא תקין) – אין טעם לנסות שוב
         store.set({ ...s, pending: false }); setSendStatus(''); toast(ex.message);
       } else {
