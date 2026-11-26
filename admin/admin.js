@@ -2,6 +2,8 @@
   'use strict';
   const C = window.RANI;
   const $ = (s) => document.querySelector(s);
+  // הגנה מפני clickjacking: דף הניהול לא ייטען בתוך מסגרת של אתר אחר
+  if (window.top !== window.self) { document.documentElement.style.display = 'none'; try { window.top.location = window.self.location; } catch { /* */ } return; }
   const TOK = 'raniAdminTok';
   // הכניסה נשמרת במכשיר למשך שעה מרגע הכניסה (גם אחרי יציאה וחזרה)
   const SESSION_MS = 60 * 60 * 1000;
