@@ -41,11 +41,25 @@
     sheet.classList.toggle('compact', false);
     layoutSheet();
   }
+  // נעילת גלילה בלי קפיצה: זוכרים את מיקום הגלילה ומחזירים אותו בסגירה
+  let lockY = 0;
+  function lockBody() {
+    if (document.body.classList.contains('locked')) return;
+    lockY = window.scrollY || 0;
+    document.body.style.top = -lockY + 'px';
+    document.body.classList.add('locked');
+  }
+  function unlockBody() {
+    if (!document.body.classList.contains('locked')) return;
+    document.body.classList.remove('locked');
+    document.body.style.top = '';
+    window.scrollTo(0, lockY);
+  }
   function openSheet(name) {
     // גם אם הגיליון באמצע סגירה (לחיצה מהירה שוב) – מבטלים את הסגירה ופותחים מחדש
     clearTimeout(closeTimer);
     scrim.hidden = false; sheet.hidden = false;
-    document.body.classList.add('locked');
+    lockBody();
     if (!sheet.classList.contains('show')) requestAnimationFrame(() => requestAnimationFrame(() => { scrim.classList.add('show'); sheet.classList.add('show'); }));
     showView(name);
   }
@@ -53,7 +67,7 @@
     clearTimeout(leaveTimer);
     const a = document.activeElement; if (isFieldEl(a)) a.blur();
     scrim.classList.remove('show'); sheet.classList.remove('show');
-    document.body.classList.remove('locked');
+    unlockBody();
     clearTimeout(closeTimer);
     closeTimer = setTimeout(() => { if (!sheet.classList.contains('show')) { scrim.hidden = true; sheet.hidden = true; current = null; sheet.classList.remove('compact', 'note-open', 'declined'); } }, reduced ? 130 : 220);
   }
@@ -84,8 +98,11 @@
     }
   }
   addEventListener('orientationchange', () => { setTimeout(() => { baseH = vv ? vv.height : innerHeight; layoutSheet(); }, 300); });
-  if (vv) { vv.addEventListener('resize', layoutSheet); vv.addEventListener('scroll', layoutSheet); }
-  addEventListener('scroll', () => { if (fieldFocused()) layoutSheet(); }, { passive: true });
+  // אירועי resize/scroll של ה-viewport יורים בקצב גבוה – מאחדים לפריים אחד כדי שהתנועה תישאר חלקה
+  let layoutRaf = 0;
+  const scheduleLayout = () => { if (!layoutRaf) layoutRaf = requestAnimationFrame(() => { layoutRaf = 0; layoutSheet(); }); };
+  if (vv) { vv.addEventListener('resize', scheduleLayout); vv.addEventListener('scroll', scheduleLayout); }
+  addEventListener('scroll', () => { if (fieldFocused()) scheduleLayout(); }, { passive: true });
   document.addEventListener('focusin', () => { layoutSheet(); setTimeout(layoutSheet, 120); setTimeout(layoutSheet, 400); });
   document.addEventListener('focusout', () => setTimeout(layoutSheet, 60));
   // גרירה על הרקע/הגיליון לא מזיזה את הדף
