@@ -119,7 +119,7 @@ bdi{unicode-bidi:isolate}
 /* פתיחה וסגירה חלקות של שדות */
 .collapse{display:grid; grid-template-rows:1fr; opacity:1; transition:grid-template-rows .2s ease, opacity .2s ease}
 .collapse > .collapse-in{overflow:hidden; min-height:0}
-.collapse.closed{grid-template-rows:0fr; opacity:0}
+.collapse.closed{grid-template-rows:0fr; opacity:0; visibility:hidden; transition:grid-template-rows .2s ease, opacity .2s ease, visibility 0s .2s}
 .rsvp-form{display:flex; flex-direction:column; gap:16px}
 .btn-primary.send{width:100%; height:56px; font-size:19px}
 .form-err{margin:0; color:var(--error); font-weight:700; font-size:14px}
