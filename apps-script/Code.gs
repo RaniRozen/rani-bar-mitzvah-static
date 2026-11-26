@@ -38,7 +38,9 @@ function doPost(e) {
 function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function fail_(code, msg) { var e = new Error(msg); e.code = code; throw e; }
 
+var _sh = null; // שמירה בזיכרון בתוך הרצה אחת – חוסך קריאות חוזרות לגיליון
 function sheet_() {
+  if (_sh) return _sh;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SHEET_NAME);
   if (!sh) {
@@ -51,6 +53,7 @@ function sheet_() {
     sh.getRange(1, 8).setValue('device').setFontWeight('bold');
     sh.getRange(2, 8, 1000, 1).setNumberFormat('@');
   }
+  _sh = sh;
   return sh;
 }
 
