@@ -71,14 +71,21 @@ function validate_(req) {
   return { name: name, attending: attending, count: count, note: clean_(req.note, 200) };
 }
 function devHash_(req) {
-  var d = String(req.dev || '');
-  if (!/^[0-9a-f]{32}$/.test(d)) fail_('bad_input', 'שגיאה');
+  var d = req.dev;
+  if (typeof d !== 'string' || !/^[0-9a-f]{32}$/.test(d)) fail_('bad_input', 'שגיאה');
   var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, 'rani-bm26:' + d), s = '';
   for (var i = 0; i < bytes.length; i++) s += ((bytes[i] & 255) + 256).toString(16).substring(1);
   return s;
 }
 function toRow_(id, d, created, updated, device) {
   return [id, d.name, d.attending ? 'yes' : 'no', String(d.count), d.note, created, updated, device || ''];
+}
+// הוספת שורה בטוחה: תמיד כטקסט (גם מעבר ל-1000 השורות המעוצבות מראש) – מונע הזרקת נוסחאות
+function appendRow_(row) {
+  var sh = sheet_(); var r = sh.getLastRow() + 1;
+  var rng = sh.getRange(r, 1, 1, HEADERS.length);
+  if (r > 1000) rng.setNumberFormat('@');
+  rng.setValues([row]);
 }
 function readAll_() {
   var sh = sheet_(); var n = sh.getLastRow(); if (n < 2) return [];
@@ -121,7 +128,7 @@ function rsvpCreate_(req) {
   var id = /^[0-9a-f]{20}$/.test(String(req.id || '')) ? String(req.id) : newId_();
   if (findRow_(1, id) > 0) id = newId_();
   var t = now_();
-  sheet_().appendRow(toRow_(id, d, t, t, device));
+  appendRow_(toRow_(id, d, t, t, device));
   return { ok: true, id: id };
 }
 function rsvpUpdate_(req) {
@@ -166,7 +173,7 @@ function requireAuth_(req) {
   var t = String(req.token || '');
   if (t.length < 40 || !CacheService.getScriptCache().get('t_' + t)) fail_('auth', 'נדרשת התחברות');
 }
-function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); sheet_().appendRow(toRow_(id, d, t, t, '')); return { ok: true, id: id }; }
+function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); appendRow_(toRow_(id, d, t, t, '')); return { ok: true, id: id }; }
 function adminUpdate_(req) {
   var d = validate_(req); var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא');
   var sh = sheet_(); var device = String(sh.getRange(row, 8).getValue());
