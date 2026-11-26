@@ -57,6 +57,30 @@ function sheet_() {
   return sh;
 }
 
+// ---- הגנה על המידע: שום דבר לא הולך לאיבוד ----
+// לפני כל דריסה או מחיקה של שורה – העתק של הגרסה הקודמת נשמר בגיליון ARCHIVE; פעולות ניהול וכניסות נרשמות ב-LOG.
+function aux_(name, headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(); var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name); sh.appendRow(headers);
+    sh.getRange(1, 1, 1, headers.length).setFontWeight('bold'); sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function auxAppend_(name, headers, vals) {
+  var sh = aux_(name, headers); var r = sh.getLastRow() + 1;
+  sh.getRange(r, 1, 1, vals.length).setNumberFormat('@').setValues([vals.map(function (v) { return String(v == null ? '' : v); })]);
+}
+function archive_(row, reason) {
+  try {
+    var vals = sheet_().getRange(row, 1, 1, HEADERS.length).getValues()[0];
+    auxAppend_('ARCHIVE', ['when', 'reason'].concat(HEADERS), [now_(), reason].concat(vals));
+  } catch (e) { /* גיבוי לא יכשיל את הפעולה עצמה */ }
+}
+function log_(what, detail) {
+  try { auxAppend_('LOG', ['when', 'what', 'detail'], [now_(), what, detail || '']); } catch (e) { /* */ }
+}
+
 function clean_(v, max) {
   var s = String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim();
   if (s.length > max) s = s.substring(0, max);
@@ -115,6 +139,7 @@ function rateLimit_(key, max, windowSec) {
 function checkHp_(req) { if (req.hp) fail_('bad_input', 'שגיאה'); }
 
 function writeRow_(row, id, d, device) {
+  archive_(row, 'before-update');
   var sh = sheet_(); var created = String(sh.getRange(row, 6).getValue());
   sh.getRange(row, 1, 1, HEADERS.length).setNumberFormat('@').setValues([toRow_(id, d, created, now_(), device)]);
 }
@@ -159,8 +184,8 @@ function login_(req) {
   if (fails >= 8) fail_('locked', 'יותר מדי ניסיונות');
   var pw = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
   if (!pw) fail_('config', 'לא הוגדרה סיסמה בשרת');
-  if (!safeEq_(String(req.password || ''), pw)) { c.put('lf', String(fails + 1), 900); Utilities.sleep(800); fail_('bad_password', 'סיסמה שגויה'); }
-  c.remove('lf');
+  if (!safeEq_(String(req.password || ''), pw)) { c.put('lf', String(fails + 1), 900); log_('login.fail', 'attempt ' + (fails + 1)); Utilities.sleep(800); fail_('bad_password', 'סיסמה שגויה'); }
+  c.remove('lf'); log_('login.ok', '');
   var token = Utilities.getUuid() + Utilities.getUuid();
   c.put('t_' + token, '1', TOKEN_TTL);
   return { ok: true, token: token };
@@ -173,11 +198,11 @@ function requireAuth_(req) {
   var t = String(req.token || '');
   if (t.length < 40 || !CacheService.getScriptCache().get('t_' + t)) fail_('auth', 'נדרשת התחברות');
 }
-function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); appendRow_(toRow_(id, d, t, t, '')); return { ok: true, id: id }; }
+function adminAdd_(req) { var d = validate_(req); var id = newId_(), t = now_(); appendRow_(toRow_(id, d, t, t, '')); log_('admin.add', id + ' ' + d.name); return { ok: true, id: id }; }
 function adminUpdate_(req) {
   var d = validate_(req); var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא');
   var sh = sheet_(); var device = String(sh.getRange(row, 8).getValue());
-  writeRow_(row, String(req.id), d, device);
+  writeRow_(row, String(req.id), d, device); log_('admin.update', String(req.id));
   return { ok: true };
 }
-function adminDelete_(req) { var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא'); sheet_().deleteRow(row); return { ok: true }; }
+function adminDelete_(req) { var row = findRow_(1, req.id); if (row < 0) fail_('not_found', 'האורח לא נמצא'); archive_(row, 'admin.delete'); log_('admin.delete', String(req.id)); sheet_().deleteRow(row); return { ok: true }; }
