@@ -179,12 +179,11 @@ function rsvpStatus_(req) {
   return { ok: true, exists: true, id: String(r[0]), name: String(r[1]), attending: String(r[2]) === 'yes', count: Number(r[3]) || 0, note: String(r[4]) };
 }
 
-// ---- סיסמת ניהול: נשמרת רק כגיבוב עם מלח (salt) ו-3000 סבבים, לא כטקסט ----
-var PW_ROUNDS = 3000;
-function hex_(bytes) { var s = ''; for (var i = 0; i < bytes.length; i++) s += ((bytes[i] & 255) + 256).toString(16).substring(1); return s; }
+// ---- סיסמת ניהול: נשמרת רק כגיבוב עם מלח (salt) ו-1500 סבבים, לא כטקסט ----
+var PW_ROUNDS = 1500;
 function hashPw_(pw, salt) {
   var h = salt + '|' + pw;
-  for (var i = 0; i < PW_ROUNDS; i++) h = hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, h + salt));
+  for (var i = 0; i < PW_ROUNDS; i++) h = Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, h + salt));
   return h;
 }
 // מריצים פעם אחת בעורך: ממירה את ADMIN_PASSWORD (טקסט) לגיבוב ADMIN_HASH + ADMIN_SALT
