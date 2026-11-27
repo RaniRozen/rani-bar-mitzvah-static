@@ -14,6 +14,7 @@ function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
+    if (!e || !e.postData || String(e.postData.contents || '').length > 20000) return out_({ ok: false, error: 'בקשה לא תקינה' });
     var req;
     try { req = JSON.parse(e.postData.contents); } catch (x) { return out_({ ok: false, error: 'בקשה לא תקינה' }); }
     if (!req || typeof req !== 'object') return out_({ ok: false, error: 'בקשה לא תקינה' });
@@ -178,13 +179,39 @@ function rsvpStatus_(req) {
   return { ok: true, exists: true, id: String(r[0]), name: String(r[1]), attending: String(r[2]) === 'yes', count: Number(r[3]) || 0, note: String(r[4]) };
 }
 
+// ---- סיסמת ניהול: נשמרת רק כגיבוב עם מלח (salt) ו-3000 סבבים, לא כטקסט ----
+var PW_ROUNDS = 3000;
+function hex_(bytes) { var s = ''; for (var i = 0; i < bytes.length; i++) s += ((bytes[i] & 255) + 256).toString(16).substring(1); return s; }
+function hashPw_(pw, salt) {
+  var h = salt + '|' + pw;
+  for (var i = 0; i < PW_ROUNDS; i++) h = hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, h + salt));
+  return h;
+}
+// מריצים פעם אחת בעורך: ממירה את ADMIN_PASSWORD (טקסט) לגיבוב ADMIN_HASH + ADMIN_SALT
+function setupAdminPassword() {
+  var p = PropertiesService.getScriptProperties(); var pw = p.getProperty('ADMIN_PASSWORD');
+  if (!pw) throw new Error('הגדירו קודם ADMIN_PASSWORD ב-Script properties');
+  if (pw.length < 12) throw new Error('הסיסמה קצרה מדי (לפחות 12 תווים)');
+  var salt = Utilities.getUuid() + Utilities.getUuid();
+  p.setProperties({ ADMIN_SALT: salt, ADMIN_HASH: hashPw_(pw, salt) });
+}
+// מריצים רק אחרי שווידאתם שהכניסה עובדת: מוחקת את הסיסמה בטקסט ומשאירה רק גיבוב
+function removePlaintextPassword() {
+  var p = PropertiesService.getScriptProperties();
+  if (!p.getProperty('ADMIN_HASH') || !p.getProperty('ADMIN_SALT')) throw new Error('הריצו קודם setupAdminPassword');
+  p.deleteProperty('ADMIN_PASSWORD');
+}
 function login_(req) {
   var c = CacheService.getScriptCache();
   var fails = Number(c.get('lf') || 0);
   if (fails >= 8) fail_('locked', 'יותר מדי ניסיונות');
-  var pw = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
-  if (!pw) fail_('config', 'לא הוגדרה סיסמה בשרת');
-  if (!safeEq_(String(req.password || ''), pw)) { c.put('lf', String(fails + 1), 900); log_('login.fail', 'attempt ' + (fails + 1)); Utilities.sleep(800); fail_('bad_password', 'סיסמה שגויה'); }
+  var p = PropertiesService.getScriptProperties();
+  var hash = p.getProperty('ADMIN_HASH'), salt = p.getProperty('ADMIN_SALT'), plain = p.getProperty('ADMIN_PASSWORD');
+  if (!(hash && salt) && !plain) fail_('config', 'לא הוגדרה סיסמה בשרת');
+  var given = typeof req.password === 'string' ? req.password : '';
+  var ok = given.length > 0 && given.length <= 200 &&
+    ((hash && salt) ? safeEq_(hashPw_(given, salt), hash) : safeEq_(given, plain));
+  if (!ok) { c.put('lf', String(fails + 1), 900); log_('login.fail', 'attempt ' + (fails + 1)); Utilities.sleep(800); fail_('bad_password', 'סיסמה שגויה'); }
   c.remove('lf'); log_('login.ok', '');
   var token = Utilities.getUuid() + Utilities.getUuid();
   c.put('t_' + token, '1', TOKEN_TTL);
